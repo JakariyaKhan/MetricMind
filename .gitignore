@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite / Local Lakehouse databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment & Dependencies
+.venv/
+env/
+venv/
+ENV/
+.env
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Streamlit & Editor
+.streamlit/secrets.toml
+.DS_Store
+.idea/
+.vscode/
