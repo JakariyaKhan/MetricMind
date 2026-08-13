@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: "Staging model for raw e-commerce orders"
+    columns:
+      - name: order_id
+        description: "Primary key"
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Foreign key to customer"
+      - name: geography_id
+        description: "Foreign key to geography"
+      - name: order_timestamp
+        description: "UTC Timestamp of order"
+
+  - name: stg_costs
+    description: "Staging model for order cost breakdown"
+    columns:
+      - name: cost_id
+        description: "Primary key"
+      - name: order_id
+        description: "Foreign key to order"
+
+  - name: fct_orders
+    description: "Gold analytical table for order transactions with conformed revenue and costs"
+    columns:
+      - name: order_id
+        description: "Primary key"
+        tests:
+          - unique
+          - not_null
+      - name: net_revenue_usd
+        description: "Gross revenue minus discounts"
+      - name: total_cost_usd
+        description: "Total of material, shipping, tariff, and overhead costs"
+      - name: gross_margin_usd
+        description: "Net revenue minus total costs"
+      - name: gross_margin_pct
+        description: "Gross margin percentage"
+
+  - name: fct_cost_breakdown
+    description: "Gold analytical table for operational and supply chain expense attribution"
+    columns:
+      - name: cost_id
+        description: "Primary key"
+      - name: shipping_cost_usd
+        description: "Freight and last-mile delivery expenses"
+      - name: material_cost_usd
+        description: "Bill of materials and component costs"
+
+  - name: dim_geography
+    description: "Conformed geographical hierarchy"
+    columns:
+      - name: geography_id
+        description: "Primary key"
+      - name: region
+        description: "Macro region (Europe, North America, APAC, LATAM)"
