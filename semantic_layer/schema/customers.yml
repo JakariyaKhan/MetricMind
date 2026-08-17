@@ -1,0 +1,46 @@
+cubes:
+  - name: customers
+    title: "Customer Retention & Segmentation"
+    description: "Customer accounts, tiers, segments, and churn metrics"
+    sql_table: dim_customers
+
+    dimensions:
+      - name: id
+        sql: customer_id
+        type: number
+        primary_key: true
+
+      - name: name
+        sql: customer_name
+        type: string
+
+      - name: segment
+        sql: segment
+        type: string
+        description: "Customer segment (Enterprise, Mid-Market, SMB)"
+
+      - name: tier
+        sql: tier
+        type: string
+        description: "Account service tier (Tier 1, Tier 2, Tier 3)"
+
+      - name: signup_date
+        sql: signup_date
+        type: time
+
+    measures:
+      - name: customer_count
+        sql: customer_id
+        type: count
+        description: "Total registered customer count"
+
+      - name: active_customers
+        sql: "SUM(is_active)"
+        type: number
+        description: "Active paying accounts"
+
+      - name: churn_rate
+        sql: "ROUND((1.0 - (CAST(SUM(is_active) AS FLOAT) / COUNT(*))) * 100.0, 2)"
+        type: number
+        format: percent
+        description: "Customer churn percentage: ((Total - Active) / Total) * 100"

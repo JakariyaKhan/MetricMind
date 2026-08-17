@@ -1,0 +1,31 @@
+cubes:
+  - name: geography
+    title: "Geographical Hierarchy"
+    description: "Regional territories and operational countries"
+    sql_table: dim_geography
+
+    dimensions:
+      - name: geography_id
+        sql: geography_id
+        type: number
+        primary_key: true
+
+      - name: region
+        sql: region
+        type: string
+        description: "Macro geographic region: Europe, North America, APAC, LATAM"
+
+      - name: country
+        sql: country
+        type: string
+        description: "Specific country name"
+
+      - name: country_code
+        sql: country_code
+        type: string
+        description: "ISO 3-character country code"
+
+      - name: currency
+        sql: currency
+        type: string
+        description: "Local operating currency"

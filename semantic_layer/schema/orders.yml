@@ -1,0 +1,82 @@
+cubes:
+  - name: orders
+    title: "Orders & Revenue Analytics"
+    description: "Enterprise governed orders, revenue, and gross margin calculations"
+    sql_table: fct_orders
+
+    joins:
+      - name: geography
+        sql: "{CUBE}.geography_id = {geography.geography_id}"
+        relationship: many_to_one
+      - name: customers
+        sql: "{CUBE}.customer_id = {customers.customer_id}"
+        relationship: many_to_one
+
+    dimensions:
+      - name: id
+        sql: order_id
+        type: number
+        primary_key: true
+        description: "Unique order identifier"
+
+      - name: order_date
+        sql: order_date
+        type: time
+        description: "Standard calendar date of the order"
+
+      - name: quarter
+        sql: quarter
+        type: string
+        description: "Fiscal quarter (e.g. Q1, Q2, Q3, Q4)"
+
+      - name: year
+        sql: year
+        type: string
+        description: "Calendar year (e.g. 2025)"
+
+      - name: product_category
+        sql: product_category
+        type: string
+        description: "Product family category"
+
+    measures:
+      - name: count
+        sql: order_id
+        type: count
+        description: "Total number of completed transactions"
+
+      - name: total_revenue
+        sql: net_revenue_usd
+        type: sum
+        format: currency
+        description: "Official recognized net revenue after discounts in USD"
+
+      - name: gross_revenue
+        sql: gross_revenue_usd
+        type: sum
+        format: currency
+        description: "Total gross revenue before discounts in USD"
+
+      - name: total_cost
+        sql: total_cost_usd
+        type: sum
+        format: currency
+        description: "Total cost of goods sold (COGS) including logistics and materials in USD"
+
+      - name: gross_margin_amount
+        sql: "SUM(net_revenue_usd) - SUM(total_cost_usd)"
+        type: number
+        format: currency
+        description: "Gross margin dollar amount (Net Revenue - Total COGS)"
+
+      - name: gross_margin_pct
+        sql: "CASE WHEN SUM(net_revenue_usd) > 0 THEN ROUND(((SUM(net_revenue_usd) - SUM(total_cost_usd)) / SUM(net_revenue_usd)) * 100.0, 2) ELSE 0.0 END"
+        type: number
+        format: percent
+        description: "Official corporate gross margin percentage: (Gross Margin Amount / Net Revenue) * 100"
+
+      - name: average_order_value
+        sql: "ROUND(AVG(net_revenue_usd), 2)"
+        type: number
+        format: currency
+        description: "Average transaction revenue value in USD"

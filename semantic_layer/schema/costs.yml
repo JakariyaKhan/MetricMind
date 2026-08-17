@@ -1,0 +1,73 @@
+cubes:
+  - name: costs
+    title: "Operational & Supply Chain Cost Breakdown"
+    description: "Governed decomposition of supply chain, manufacturing, and shipping expenses"
+    sql_table: fct_cost_breakdown
+
+    joins:
+      - name: geography
+        sql: "{CUBE}.geography_id = {geography.geography_id}"
+        relationship: many_to_one
+
+    dimensions:
+      - name: id
+        sql: cost_id
+        type: number
+        primary_key: true
+        description: "Cost line item identifier"
+
+      - name: cost_date
+        sql: cost_date
+        type: time
+        description: "Date cost was incurred"
+
+      - name: quarter
+        sql: quarter
+        type: string
+        description: "Fiscal quarter"
+
+      - name: year
+        sql: year
+        type: string
+        description: "Fiscal year"
+
+      - name: carrier
+        sql: carrier
+        type: string
+        description: "Freight or logistics service provider"
+
+      - name: cost_center
+        sql: cost_center
+        type: string
+        description: "Corporate operational department"
+
+    measures:
+      - name: material_cost
+        sql: material_cost_usd
+        type: sum
+        format: currency
+        description: "Direct component and raw material costs in USD"
+
+      - name: shipping_cost
+        sql: shipping_cost_usd
+        type: sum
+        format: currency
+        description: "Freight, fuel surcharges, and last-mile shipping costs in USD"
+
+      - name: tariff_cost
+        sql: tariff_cost_usd
+        type: sum
+        format: currency
+        description: "Import tariffs and customs duties in USD"
+
+      - name: overhead_cost
+        sql: overhead_cost_usd
+        type: sum
+        format: currency
+        description: "Warehousing and operational overhead in USD"
+
+      - name: total_operational_cost
+        sql: "SUM(material_cost_usd + shipping_cost_usd + tariff_cost_usd + overhead_cost_usd)"
+        type: number
+        format: currency
+        description: "Total aggregated operational expenses in USD"
