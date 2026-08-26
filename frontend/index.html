@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetricMind - Agentic Semantic BI Engine</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Apache ECharts & Marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- TOP NAVIGATION -->
+        <header class="navbar">
+            <div class="nav-brand">
+                <div class="logo-icon"><i class="fa-solid fa-brain-circuit"></i></div>
+                <div class="brand-text">
+                    <h1>MetricMind</h1>
+                    <span class="badge-governed"><i class="fa-solid fa-shield-check"></i> Governed Semantic BI</span>
+                </div>
+            </div>
+            
+            <div class="nav-badges">
+                <div class="status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span>Semantic Layer: <strong>Cube.dev (Active)</strong></span>
+                </div>
+                <div class="status-indicator">
+                    <i class="fa-solid fa-database text-blue"></i>
+                    <span>Lakehouse: <strong>Snowflake Gold Marts</strong></span>
+                </div>
+                <div class="status-indicator">
+                    <i class="fa-solid fa-robot text-purple"></i>
+                    <span>Orchestrator: <strong>LangChain / Llama 3</strong></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN WORKSPACE -->
+        <main class="main-container">
+            <!-- CHAT AREA -->
+            <section class="chat-section">
+                <!-- Suggestion Pills -->
+                <div class="quick-prompts-container">
+                    <span class="prompts-label"><i class="fa-solid fa-bolt"></i> Sample Executive Questions:</span>
+                    <div class="prompts-scroll">
+                        <button class="prompt-pill" onclick="sendPrompt('Why did our European margins drop last quarter?')">
+                            📉 Why did our European margins drop last quarter?
+                        </button>
+                        <button class="prompt-pill" onclick="sendPrompt('Show me Q3 Revenue by Region')">
+                            📊 Show me Q3 Revenue by Region
+                        </button>
+                        <button class="prompt-pill" onclick="sendPrompt('Compare 2025 Shipping Costs vs Material Costs')">
+                            🚢 Compare Shipping vs Material Costs
+                        </button>
+                        <button class="prompt-pill" onclick="sendPrompt('What is our Churn Rate by Segment?')">
+                            👥 What is our Churn Rate by Segment?
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Message Feed -->
+                <div class="messages-viewport" id="messagesViewport">
+                    <!-- Welcome Card -->
+                    <div class="message-card assistant-card">
+                        <div class="agent-avatar"><i class="fa-solid fa-robot"></i></div>
+                        <div class="message-body">
+                            <div class="agent-name">MetricMind Assistant <span class="governance-tag">Single Source of Truth</span></div>
+                            <div class="message-markdown">
+                                <p>Welcome to <strong>MetricMind</strong>. I am your Governed Semantic BI Agent.</p>
+                                <p>Unlike raw Text-to-SQL assistants that hallucinate metrics and broken joins, all queries are compiled against mathematically verified <strong>Cube.dev Semantic Schemas</strong>.</p>
+                                <ul>
+                                    <li><strong>100% Metric Consistency:</strong> Finance and Sales see the exact same figures.</li>
+                                    <li><strong>Multi-Step Reasoning:</strong> Autonomous secondary diagnostics to find root causes.</li>
+                                    <li><strong>Full Auditability:</strong> Click <em>View SQL</em> or <em>View API Call</em> on any response.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prompt Input Bar -->
+                <div class="input-container">
+                    <form id="chatForm" onsubmit="handleChatSubmit(event)">
+                        <div class="input-wrapper">
+                            <input 
+                                type="text" 
+                                id="queryInput" 
+                                placeholder="Ask an analytical question (e.g. 'Why did our European margins drop last quarter?')..." 
+                                autocomplete="off"
+                            />
+                            <button type="submit" id="sendBtn" class="send-button">
+                                <span>Analyze</span>
+                                <i class="fa-solid fa-arrow-up"></i>
+                            </button>
+                        </div>
+                    </form>
+                    <div class="input-footer">
+                        <span><i class="fa-solid fa-lock"></i> Cost Governance Guardrails Active: Max rows capped at 200 • Zero Raw SQL Allowed</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT AUDIT & SCHEMA SIDEBAR -->
+            <aside class="sidebar">
+                <!-- Telemetry Widget -->
+                <div class="sidebar-widget">
+                    <h3 class="widget-title"><i class="fa-solid fa-chart-pie"></i> Governance Telemetry</h3>
+                    <div class="telemetry-grid">
+                        <div class="telemetry-item">
+                            <span class="tele-val text-green" id="statHallucinations">100%</span>
+                            <span class="tele-label">SQL Hallucination Prevention</span>
+                        </div>
+                        <div class="telemetry-item">
+                            <span class="tele-val text-blue" id="statDeterminism">100%</span>
+                            <span class="tele-label">Metric Determinism</span>
+                        </div>
+                        <div class="telemetry-item">
+                            <span class="tele-val" id="statQueries">0</span>
+                            <span class="tele-label">Governed Queries</span>
+                        </div>
+                        <div class="telemetry-item">
+                            <span class="tele-val text-orange" id="statDiagnostics">0</span>
+                            <span class="tele-label">Root Cause Traversal</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Semantic Schema Explorer -->
+                <div class="sidebar-widget flex-1">
+                    <h3 class="widget-title"><i class="fa-solid fa-code-branch"></i> Semantic Layer Schema (Cube.dev)</h3>
+                    <div class="schema-explorer" id="schemaExplorer">
+                        <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading schema catalog...</div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- AUDIT MODAL DIALOG -->
+    <div class="modal-backdrop" id="auditModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle"><i class="fa-solid fa-code"></i> Inspection Drawer</h3>
+                <button class="close-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <pre><code id="modalCode"></code></pre>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-copy" onclick="copyModalCode()"><i class="fa-solid fa-copy"></i> Copy to Clipboard</button>
+                <button class="btn-secondary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
