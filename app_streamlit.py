@@ -313,10 +313,18 @@ if "governance_stats" not in st.session_state:
         "diagnostics_run": 0
     }
 
-# Load Engine & Agent
+# Load Engine & Agent with Auto-Initialization for Cloud Deployments
 @st.cache_resource
 def get_engine_and_agent():
-    engine = SemanticEngine()
+    db_path = "metricmind_lakehouse.db"
+    # If running in fresh cloud container without existing database, initialize automatically
+    if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
+        from data.seed_generator import generate_enterprise_data
+        from dbt_project.runner import run_transformations
+        generate_enterprise_data(db_path)
+        run_transformations(db_path)
+
+    engine = SemanticEngine(db_path=db_path)
     agent = MetricMindAgent(engine=engine)
     return engine, agent
 
