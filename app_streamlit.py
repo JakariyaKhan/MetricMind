@@ -405,10 +405,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Main Application Tabs
-tab_chat, tab_catalog, tab_lakehouse, tab_audit = st.tabs([
+tab_chat, tab_catalog, tab_lakehouse, tab_eda, tab_audit = st.tabs([
     "💬 Conversational BI & Diagnostics",
     "🏛️ Semantic Layer Catalog (Cube.dev)",
     "💾 Lakehouse Gold Marts",
+    "📊 Advanced Data Analysis & Visualizations",
     "🛡️ Governance & Determinism Audit"
 ])
 
@@ -741,7 +742,116 @@ with tab_lakehouse:
 
 
 # ==============================================================================
-# TAB 4: GOVERNANCE & DETERMINISM AUDIT SUITE
+# TAB 4: ADVANCED DATA ANALYSIS & VISUALIZATIONS
+# ==============================================================================
+with tab_eda:
+    st.markdown("### 📊 Enterprise Exploratory Data Analysis & Diagnostic Plots")
+    st.caption("Deep-dive statistical analysis and publication-grade visualizations generated from the enterprise lakehouse dataset.")
+
+    csv_path = "data/enterprise_sales_and_costs_2025.csv"
+    if os.path.exists(csv_path):
+        df_eda = pd.read_csv(csv_path)
+    else:
+        from analysis.eda_analysis import load_and_enrich_dataset
+        df_eda = load_and_enrich_dataset()
+
+    # Top KPI Metrics Row
+    tot_rev = df_eda['net_revenue_usd'].sum()
+    tot_margin = df_eda['gross_margin_usd'].sum()
+    avg_margin_pct = (tot_margin / tot_rev) * 100
+    tot_shipping = df_eda['shipping_cost_usd'].sum()
+
+    col_e1, col_e2, col_e3, col_e4 = st.columns(4)
+    with col_e1:
+        st.markdown(f"""
+        <div class="sidebar-kpi-card" style="text-align:left;">
+            <div class="sidebar-kpi-lbl">Total Net Revenue (2025)</div>
+            <div class="sidebar-kpi-val" style="color:#60a5fa;">${tot_rev/1e6:.2f}M</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_e2:
+        st.markdown(f"""
+        <div class="sidebar-kpi-card" style="text-align:left;">
+            <div class="sidebar-kpi-lbl">Total Gross Margin (USD)</div>
+            <div class="sidebar-kpi-val" style="color:#34d399;">${tot_margin/1e6:.2f}M</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_e3:
+        st.markdown(f"""
+        <div class="sidebar-kpi-card" style="text-align:left;">
+            <div class="sidebar-kpi-lbl">Global Gross Margin %</div>
+            <div class="sidebar-kpi-val" style="color:#fb923c;">{avg_margin_pct:.1f}%</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_e4:
+        st.markdown(f"""
+        <div class="sidebar-kpi-card" style="text-align:left;">
+            <div class="sidebar-kpi-lbl">Total Freight Expenses</div>
+            <div class="sidebar-kpi-val" style="color:#f43f5e;">${tot_shipping/1e6:.2f}M</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("#### 🖼️ Select Diagnostic Visual Chart to Inspect:")
+
+    plot_options = {
+        "📈 1. Global Revenue & Gross Margin % Trajectory (2025)": {
+            "file": "analysis/plots/1_quarterly_revenue_and_margin_trajectory.png",
+            "desc": "Dual-axis comparison showing quarterly net revenue progression against the corporate 38.0% margin target."
+        },
+        "📉 2. Regional Margin Comparison & European Q4 Anomaly": {
+            "file": "analysis/plots/2_regional_margin_drop_root_cause.png",
+            "desc": "Multi-region trend lines isolating the sharp margin decline in Europe during Q4 2025."
+        },
+        "🚢 3. European Operational Cost Decomposition (Shipping vs Material)": {
+            "file": "analysis/plots/3_cost_decomposition_breakdown.png",
+            "desc": "Stacked component decomposition proving that a +240% freight surcharge was the root cause of the margin drop."
+        },
+        "📦 4. Product Category Profitability & Volume Matrix": {
+            "file": "analysis/plots/4_product_category_profitability_matrix.png",
+            "desc": "Bubble scatter plot evaluating sales volume vs gross margin % across Cloud Hardware, Switches, Storage, and Edge Gateways."
+        },
+        "👥 5. Customer Segment Revenue & Tier Churn Distribution": {
+            "file": "analysis/plots/5_customer_churn_and_tier_distribution.png",
+            "desc": "Revenue contribution across Enterprise, Mid-Market, and SMB accounts alongside tier-level churn risk."
+        },
+        "🚚 6. Freight Carrier Logistics Expense Analysis": {
+            "file": "analysis/plots/6_freight_carrier_cost_impact.png",
+            "desc": "Quarterly expense breakdown across DHL Global, Maersk Freight, FedEx, UPS, and DB Schenker."
+        }
+    }
+
+    selected_plot_label = st.selectbox("Choose Visual Analysis Chart:", list(plot_options.keys()), index=0)
+    selected_plot_info = plot_options[selected_plot_label]
+
+    st.info(f"**Chart Context:** {selected_plot_info['desc']}")
+    
+    if os.path.exists(selected_plot_info['file']):
+        st.image(selected_plot_info['file'], use_container_width=True)
+    else:
+        st.warning("Generating plot image...")
+        from analysis.eda_analysis import generate_analytical_visualizations
+        generate_analytical_visualizations(df_eda)
+        st.image(selected_plot_info['file'], use_container_width=True)
+
+    st.markdown("---")
+    col_d1, col_d2 = st.columns([3, 1])
+    with col_d1:
+        st.markdown("**Download Enriched Dataset for Further Analysis (CSV Format):**")
+        st.caption(f"Contains {len(df_eda):,} transactions with full order, cost, customer, and regional dimensions.")
+    with col_d2:
+        with open(csv_path, "rb") as f:
+            st.download_button(
+                label="📥 Download Dataset (CSV)",
+                data=f,
+                file_name="enterprise_sales_and_costs_2025.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+
+# ==============================================================================
+# TAB 5: GOVERNANCE & DETERMINISM AUDIT SUITE
 # ==============================================================================
 with tab_audit:
     st.markdown("### 🛡️ Single Source of Truth & Governance Audit Suite")
