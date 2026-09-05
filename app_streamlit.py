@@ -330,6 +330,126 @@ def get_engine_and_agent():
 
 engine, agent = get_engine_and_agent()
 
+
+def render_payload_streamlit(payload):
+    """Renders interactive charts and transparency audit drawers in Streamlit with high visibility."""
+    import plotly.graph_objects as go
+    import plotly.express as px
+
+    steps = payload.get("steps", [])
+    
+    # 1. Multi-Step Diagnostic Visual Rendering
+    if payload.get("type") == "multi_step_diagnostic" and len(steps) >= 2:
+        st.markdown("### 📊 Diagnostic Visualizations (Multi-Step Root Cause)")
+        col_c1, col_c2 = st.columns(2)
+        
+        data1 = steps[0].get("data", [])
+        data2 = steps[1].get("data", [])
+        
+        with col_c1:
+            if data1:
+                df1 = pd.DataFrame(data1)
+                fig1 = go.Figure()
+                fig1.add_trace(go.Scatter(
+                    x=df1["orders.quarter"],
+                    y=df1["orders.gross_margin_pct"],
+                    mode="lines+markers+text",
+                    name="Gross Margin %",
+                    line=dict(color="#ef4444", width=4),
+                    marker=dict(size=12, color="#ef4444"),
+                    text=[f"{v}%" for v in df1["orders.gross_margin_pct"]],
+                    textposition="top center",
+                    textfont=dict(color="#ffffff", size=12)
+                ))
+                fig1.add_trace(go.Scatter(
+                    x=df1["orders.quarter"],
+                    y=[38.0]*len(df1),
+                    mode="lines",
+                    name="Target Margin (38%)",
+                    line=dict(color="#10b981", dash="dash", width=2)
+                ))
+                fig1.update_layout(
+                    title="<b>Gross Margin % Trajectory (2025)</b>",
+                    template="plotly_dark",
+                    paper_bgcolor="#111c30",
+                    plot_bgcolor="#111c30",
+                    yaxis=dict(title="Gross Margin %", ticksuffix="%", gridcolor="#233554"),
+                    xaxis=dict(gridcolor="#233554"),
+                    margin=dict(l=20, r=20, t=40, b=20),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
+                st.plotly_chart(fig1, use_container_width=True)
+
+        with col_c2:
+            if data2:
+                df2 = pd.DataFrame(data2)
+                fig2 = go.Figure()
+                fig2.add_trace(go.Bar(name="Shipping Cost", x=df2["costs.quarter"], y=df2["costs.shipping_cost"], marker_color="#f97316"))
+                fig2.add_trace(go.Bar(name="Material Cost", x=df2["costs.quarter"], y=df2["costs.material_cost"], marker_color="#3b82f6"))
+                fig2.add_trace(go.Bar(name="Tariffs & Duties", x=df2["costs.quarter"], y=df2["costs.tariff_cost"], marker_color="#8b5cf6"))
+                fig2.add_trace(go.Bar(name="Overhead", x=df2["costs.quarter"], y=df2["costs.overhead_cost"], marker_color="#64748b"))
+                fig2.update_layout(
+                    barmode="stack",
+                    title="<b>Operational Cost Breakdown (USD)</b>",
+                    template="plotly_dark",
+                    paper_bgcolor="#111c30",
+                    plot_bgcolor="#111c30",
+                    yaxis=dict(title="Expenses (USD)", tickprefix="$", gridcolor="#233554"),
+                    xaxis=dict(gridcolor="#233554"),
+                    margin=dict(l=20, r=20, t=40, b=20),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
+                st.plotly_chart(fig2, use_container_width=True)
+
+    # 2. Standard Single-Query Visual Rendering
+    elif steps and steps[0].get("data"):
+        data = steps[0].get("data", [])
+        df = pd.DataFrame(data)
+        
+        cols = list(df.columns)
+        meas_cols = [c for c in cols if any(m in c for m in ["revenue", "cost", "rate", "count", "margin"])]
+        dim_cols = [c for c in cols if c not in meas_cols]
+
+        if dim_cols and meas_cols:
+            dim = dim_cols[0]
+            meas = meas_cols[0]
+            fig = px.bar(
+                df,
+                x=dim,
+                y=meas,
+                title=f"<b>Governed Metric Analysis: {meas.split('.')[-1].replace('_', ' ').title()}</b>",
+                color=meas,
+                color_continuous_scale="Blues",
+                template="plotly_dark"
+            )
+            fig.update_layout(
+                paper_bgcolor="#111c30",
+                plot_bgcolor="#111c30",
+                yaxis=dict(gridcolor="#233554"),
+                xaxis=dict(gridcolor="#233554"),
+                margin=dict(l=20, r=20, t=40, b=20)
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+    # 3. Governance & Audit Drawers ("View SQL" & "View API Call")
+    if steps:
+        with st.expander("🔍 **Audit Transparency Drawer: View Compiled SQL & Cube.dev API Calls**", expanded=False):
+            for idx, s in enumerate(steps):
+                st.markdown(f"#### 🔒 Step {idx+1}: {s.get('step_name', 'Semantic Query')}")
+                
+                col_a1, col_a2 = st.columns(2)
+                with col_a1:
+                    st.caption("⚡ **Cube.dev REST API Payload** (Strict JSON sent to Semantic Layer):")
+                    st.code(json.dumps(s.get("cube_query", {}), indent=2), language="json")
+                with col_a2:
+                    st.caption("🔒 **Compiled ANSI / Snowflake SQL** (Deterministic, Zero Hallucinations):")
+                    st.code(s.get("compiled_sql", ""), language="sql")
+
+                st.caption(f"📋 **Returned Governed Data Table** ({len(s.get('data', []))} records):")
+                if s.get("data"):
+                    st.dataframe(pd.DataFrame(s.get("data")), use_container_width=True)
+
+
 # Sidebar: Governance Telemetry & Controls
 with st.sidebar:
     st.markdown("## 🧠 MetricMind BI")
@@ -507,126 +627,6 @@ with tab_chat:
                     "content": result["text"],
                     "payload": result
                 })
-
-
-def render_payload_streamlit(payload):
-    """Renders interactive charts and transparency audit drawers in Streamlit with high visibility."""
-    import plotly.graph_objects as go
-    import plotly.express as px
-
-    steps = payload.get("steps", [])
-    
-    # 1. Multi-Step Diagnostic Visual Rendering
-    if payload.get("type") == "multi_step_diagnostic" and len(steps) >= 2:
-        st.markdown("### 📊 Diagnostic Visualizations (Multi-Step Root Cause)")
-        col_c1, col_c2 = st.columns(2)
-        
-        data1 = steps[0].get("data", [])
-        data2 = steps[1].get("data", [])
-        
-        with col_c1:
-            if data1:
-                df1 = pd.DataFrame(data1)
-                fig1 = go.Figure()
-                fig1.add_trace(go.Scatter(
-                    x=df1["orders.quarter"],
-                    y=df1["orders.gross_margin_pct"],
-                    mode="lines+markers+text",
-                    name="Gross Margin %",
-                    line=dict(color="#ef4444", width=4),
-                    marker=dict(size=12, color="#ef4444"),
-                    text=[f"{v}%" for v in df1["orders.gross_margin_pct"]],
-                    textposition="top center",
-                    textfont=dict(color="#ffffff", size=12)
-                ))
-                fig1.add_trace(go.Scatter(
-                    x=df1["orders.quarter"],
-                    y=[38.0]*len(df1),
-                    mode="lines",
-                    name="Target Margin (38%)",
-                    line=dict(color="#10b981", dash="dash", width=2)
-                ))
-                fig1.update_layout(
-                    title="<b>Gross Margin % Trajectory (2025)</b>",
-                    template="plotly_dark",
-                    paper_bgcolor="#111c30",
-                    plot_bgcolor="#111c30",
-                    yaxis=dict(title="Gross Margin %", ticksuffix="%", gridcolor="#233554"),
-                    xaxis=dict(gridcolor="#233554"),
-                    margin=dict(l=20, r=20, t=40, b=20),
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-                )
-                st.plotly_chart(fig1, use_container_width=True)
-
-        with col_c2:
-            if data2:
-                df2 = pd.DataFrame(data2)
-                fig2 = go.Figure()
-                fig2.add_trace(go.Bar(name="Shipping Cost", x=df2["costs.quarter"], y=df2["costs.shipping_cost"], marker_color="#f97316"))
-                fig2.add_trace(go.Bar(name="Material Cost", x=df2["costs.quarter"], y=df2["costs.material_cost"], marker_color="#3b82f6"))
-                fig2.add_trace(go.Bar(name="Tariffs & Duties", x=df2["costs.quarter"], y=df2["costs.tariff_cost"], marker_color="#8b5cf6"))
-                fig2.add_trace(go.Bar(name="Overhead", x=df2["costs.quarter"], y=df2["costs.overhead_cost"], marker_color="#64748b"))
-                fig2.update_layout(
-                    barmode="stack",
-                    title="<b>Operational Cost Breakdown (USD)</b>",
-                    template="plotly_dark",
-                    paper_bgcolor="#111c30",
-                    plot_bgcolor="#111c30",
-                    yaxis=dict(title="Expenses (USD)", tickprefix="$", gridcolor="#233554"),
-                    xaxis=dict(gridcolor="#233554"),
-                    margin=dict(l=20, r=20, t=40, b=20),
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-                )
-                st.plotly_chart(fig2, use_container_width=True)
-
-    # 2. Standard Single-Query Visual Rendering
-    elif steps and steps[0].get("data"):
-        data = steps[0].get("data", [])
-        df = pd.DataFrame(data)
-        
-        cols = list(df.columns)
-        meas_cols = [c for c in cols if any(m in c for m in ["revenue", "cost", "rate", "count", "margin"])]
-        dim_cols = [c for c in cols if c not in meas_cols]
-
-        if dim_cols and meas_cols:
-            dim = dim_cols[0]
-            meas = meas_cols[0]
-            fig = px.bar(
-                df,
-                x=dim,
-                y=meas,
-                title=f"<b>Governed Metric Analysis: {meas.split('.')[-1].replace('_', ' ').title()}</b>",
-                color=meas,
-                color_continuous_scale="Blues",
-                template="plotly_dark"
-            )
-            fig.update_layout(
-                paper_bgcolor="#111c30",
-                plot_bgcolor="#111c30",
-                yaxis=dict(gridcolor="#233554"),
-                xaxis=dict(gridcolor="#233554"),
-                margin=dict(l=20, r=20, t=40, b=20)
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-    # 3. Governance & Audit Drawers ("View SQL" & "View API Call")
-    if steps:
-        with st.expander("🔍 **Audit Transparency Drawer: View Compiled SQL & Cube.dev API Calls**", expanded=False):
-            for idx, s in enumerate(steps):
-                st.markdown(f"#### 🔒 Step {idx+1}: {s.get('step_name', 'Semantic Query')}")
-                
-                col_a1, col_a2 = st.columns(2)
-                with col_a1:
-                    st.caption("⚡ **Cube.dev REST API Payload** (Strict JSON sent to Semantic Layer):")
-                    st.code(json.dumps(s.get("cube_query", {}), indent=2), language="json")
-                with col_a2:
-                    st.caption("🔒 **Compiled ANSI / Snowflake SQL** (Deterministic, Zero Hallucinations):")
-                    st.code(s.get("compiled_sql", ""), language="sql")
-
-                st.caption(f"📋 **Returned Governed Data Table** ({len(s.get('data', []))} records):")
-                if s.get("data"):
-                    st.dataframe(pd.DataFrame(s.get("data")), use_container_width=True)
-
 
 # ==============================================================================
 # TAB 2: SEMANTIC LAYER CATALOG (CUBE.DEV DEFINITION AS CODE)
